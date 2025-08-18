@@ -98,3 +98,7 @@ ipython_config.py
 
 # UV
 uv.lock
+
+
+# etc
+sync_async.ipynb
