@@ -6,12 +6,13 @@ from schemas.blog_schema import BlogData
 from utils import utils
 from dotenv import load_dotenv
 import os, time
+import aiofiles as aio
 
 load_dotenv()
 UPLOAD_DIR = os.getenv("UPLOAD_DIR")
 
 
-def get_all_blogs(conn: Connection) -> list[BlogData]:
+async def get_all_blogs(conn: Connection) -> list[BlogData]:
     try:
         # 1. Python: image_loc가 None인 경우 default 이미지 경로로 설정
         # DB → Python으로 null 값 전송 → Python에서 조건 체크 → 값 변경
@@ -35,7 +36,7 @@ def get_all_blogs(conn: Connection) -> list[BlogData]:
                 modified_dt 
             FROM blog;
         """
-        result = conn.execute(text(query))
+        result = await conn.execute(text(query))
         all_blogs = [BlogData(id=row.id,
               title=row.title,
               author=row.author,
@@ -56,7 +57,7 @@ def get_all_blogs(conn: Connection) -> list[BlogData]:
                             detail="An unexpected error occurred")
 
 
-def get_blog_by_id(id: int, conn: Connection = None) -> BlogData:
+async def get_blog_by_id(id: int, conn: Connection = None) -> BlogData:
     try:
         query = f"""
             SELECT id, title, author, content, image_loc, modified_dt FROM blog_db.blog
@@ -64,7 +65,7 @@ def get_blog_by_id(id: int, conn: Connection = None) -> BlogData:
         """
         stmt = text(query)
         bind_stmt = stmt.bindparams(id = id)
-        result = conn.execute(bind_stmt)
+        result = await conn.execute(bind_stmt)
         if result.rowcount == 0:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"Blog with id {id} not found")
@@ -92,7 +93,7 @@ def get_blog_by_id(id: int, conn: Connection = None) -> BlogData:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="An unexpected error occurred")
 
-def upload_file(author: str, imagefile: UploadFile = None):
+async def upload_file(author: str, imagefile: UploadFile = None):
     try:
         user_dir = f"{UPLOAD_DIR}/{author}/"
 
@@ -103,9 +104,10 @@ def upload_file(author: str, imagefile: UploadFile = None):
         upload_fname = f"{fname_only}_{int(time.time())}{ext}"
         upload_file_loc = f"{user_dir}{upload_fname}"
         print(f"###########Upload file location: {upload_file_loc}###########")
-        with open(upload_file_loc, "wb") as outfile:
-            while content := imagefile.file.read(1024):
-                outfile.write(content)
+        async with aio.open(upload_file_loc, "wb") as outfile:
+            # while content := imagefile.file.read(1024):     # imagefile.file.read(): sync
+            while content := await imagefile.read(1024):            # imagefile.read(): async
+                await outfile.write(content)
 
         # print(f"###########Upload complete: {upload_file_loc}###########")
         return upload_file_loc[1:]
@@ -115,24 +117,24 @@ def upload_file(author: str, imagefile: UploadFile = None):
                             detail="An unexpected error occurred while uploading the file")
 
 
-def create_blog(title: str, author: str, content: str, image_loc: str = None, conn: Connection = None) -> None:
+async def create_blog(title: str, author: str, content: str, image_loc: str = None, conn: Connection = None) -> None:
     try:
         query = f"""
             INSERT INTO blog_db.blog (title, author, content, image_loc, modified_dt)
             VALUES ('{title}', '{author}', '{content}', {utils.none_to_null(image_loc, is_single_quote=True)}, now())
         """
-        conn.execute(text(query))
-        conn.commit()
-    
+        await conn.execute(text(query))
+        await conn.commit()
+
     except SQLAlchemyError as e:
         print(e)
-        conn.rollback()
+        await conn.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Failed to create blog due to bad request")
 
 
 
-def update_blog(id:int, title: str, author: str, content: str, image_loc: str | None, conn: Connection = None):
+async def update_blog(id:int, title: str, author: str, content: str, image_loc: str | None, conn: Connection = None):
     try:
         query = f"""
             UPDATE blog_db.blog
@@ -140,31 +142,31 @@ def update_blog(id:int, title: str, author: str, content: str, image_loc: str | 
             WHERE id = :id
         """
         bind_stmt = text(query).bindparams(id=id, title=title, author=author, content=content, image_loc=image_loc)
-        result = conn.execute(bind_stmt)
+        result = await conn.execute(bind_stmt)
         if result.rowcount == 0:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"Blog with id {id} not found")
-        conn.commit()
+        await conn.commit()
 
     except SQLAlchemyError as e:
         print(e)
-        conn.rollback()
+        await conn.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Failed to update blog due to bad request")
 
 
-def delete_blog(id: int, image_loc: str | None, conn: Connection = None):
+async def delete_blog(id: int, image_loc: str | None, conn: Connection = None):
     try:
         query = f"""
             DELETE FROM blog_db.blog
             WHERE id = :id
         """
         bind_stmt = text(query).bindparams(id=id)
-        result = conn.execute(bind_stmt)
+        result = await conn.execute(bind_stmt)
         if result.rowcount == 0:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"Blog with id {id} not found")
-        conn.commit()
+        await conn.commit()
 
         if image_loc is not None and os.path.exists(f".{image_loc}"):
             print(f".{image_loc}")
@@ -172,12 +174,12 @@ def delete_blog(id: int, image_loc: str | None, conn: Connection = None):
 
     except SQLAlchemyError as e:
         print(e)
-        conn.rollback()
+        await conn.rollback()
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                             detail="Requested service is unavailable due to internal server error")
     
     except Exception as e:
         print(e)
-        conn.rollback()
+        await conn.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="An unexpected error occurred")
