@@ -89,14 +89,15 @@ ipython_config.py
 # Logs
 *.log
 
-# Static files
-/static/default/default_blog.png
-/static/db_fundamentals.png
-/static/uploads/
+# Static files (uploaded content)
+static/uploads/
+static/default/*
+!static/default/.gitkeep
+static/db_fundamental.png
 
-# UV
-uv.lock
-
-
-# etc
+# Jupyter notebooks
 sync_async.ipynb
+*.ipynb
+
+# UV lock file
+uv.lock
