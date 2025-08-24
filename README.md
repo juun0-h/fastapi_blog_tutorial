@@ -1,4 +1,4 @@
-# FastAPI Blog Management System: v2.0
+# FastAPI Blog Management System: v2.1.0
 
 FastAPI 기반 블로그 관리 시스템입니다. MySQL 데이터베이스와 연동하여 블로그 글 작성, 수정, 삭제, 조회 기능을 제공합니다.
 
@@ -6,6 +6,8 @@ FastAPI 기반 블로그 관리 시스템입니다. MySQL 데이터베이스와 
 
 - 블로그 글 작성, 수정, 삭제, 조회 (CRUD)
 - Jinja2 템플릿을 사용한 웹 인터페이스
+- 파일 업로드 및 정적 파일 서빙
+- 반응형 웹 디자인 (Bootstrap 통합)
 - MySQL 데이터베이스 연동
 - SQLAlchemy ORM을 통한 효율적인 데이터베이스 관리
 - Connection Pool을 활용한 성능 최적화
@@ -17,13 +19,21 @@ FastAPI 기반 블로그 관리 시스템입니다. MySQL 데이터베이스와 
 - **Database**: MySQL
 - **ORM**: SQLAlchemy 2.0+
 - **Template Engine**: Jinja2
+- **Frontend**: Bootstrap 5
+- **File Upload**: python-multipart
 - **Data Validation**: Pydantic
 - **Environment**: Python 3.12+
 
-## v2.0 주요 변경사항
+## 버전별 변경사항
 
+### v2.1.0 (2025-08-25)
+- **정적 파일 서빙**: CSS, JS, 이미지 파일을 위한 static 디렉토리 추가
+- **템플릿 레이아웃 시스템**: 재사용 가능한 레이아웃 컴포넌트 도입
+- **파일 업로드 기능**: python-multipart 의존성 추가로 파일 업로드 지원
+- **UI/UX 개선**: Bootstrap을 활용한 반응형 디자인 적용
+
+### v2.0.0
 - **서비스 레이어 분리**: 비즈니스 로직을 별도의 서비스 레이어로 분리하여 코드 구조 개선
-
 - **모듈화 개선**: 각 기능별로 더 명확하게 분리된 모듈 구조
 
 ## 프로젝트 구조
@@ -31,15 +41,22 @@ FastAPI 기반 블로그 관리 시스템입니다. MySQL 데이터베이스와 
 ```
 /
 ├── main.py                 # FastAPI 애플리케이션 진입점
+├── static/                 # 정적 파일 (CSS, JS, 이미지) (NEW v2.1.0)
+│   ├── uploads/           # 업로드된 파일 저장소
+│   └── default/           # 기본 이미지 및 에셋
 ├── routes/
 │   └── blog.py            # 블로그 관련 라우터
-├── services/              # 비즈니스 로직 서비스 레이어 (NEW)
+├── services/              # 비즈니스 로직 서비스 레이어
 │   └── blog_svc.py        # 블로그 서비스 로직
 ├── schemas/
 │   └── blog_schema.py     # Pydantic 모델 정의
 ├── db/
 │   └── database.py        # 데이터베이스 연결 관리
 ├── templates/             # HTML 템플릿
+│   ├── layout/            # 재사용 가능한 레이아웃 (NEW v2.1.0)
+│   │   ├── main_layout.html  # 메인 레이아웃
+│   │   ├── navbar.html       # 네비게이션 바
+│   │   └── footer.html       # 푸터
 │   ├── index.html         # 메인 페이지
 │   ├── show_blog.html     # 블로그 상세 보기
 │   ├── new_blog.html      # 새 블로그 작성
