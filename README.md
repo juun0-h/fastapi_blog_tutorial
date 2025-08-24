@@ -1,4 +1,4 @@
-# FastAPI Blog Management System: v2.1.0
+# FastAPI Blog Management System: v2.2.0
 
 FastAPI 기반 블로그 관리 시스템입니다. MySQL 데이터베이스와 연동하여 블로그 글 작성, 수정, 삭제, 조회 기능을 제공하며, 파일 업로드와 반응형 웹 인터페이스를 지원합니다.
 
@@ -63,6 +63,14 @@ FastAPI 기반 블로그 관리 시스템입니다. MySQL 데이터베이스와 
 - ✅ 이미지 미리보기 기능
 
 ## 📝 버전별 변경사항
+
+### v2.2.0 (2025-08-25) - 비동기 처리 아키텍처 도입
+- ⚡ **비동기 데이터베이스 연결**: SQLAlchemy AsyncEngine으로 성능 최적화
+- 🔄 **Async/Await 패턴**: 모든 엔드포인트 및 서비스 레이어 비동기 처리
+- 🚀 **FastAPI 라이프사이클**: 애플리케이션 시작/종료 이벤트 관리 구현
+- 📈 **성능 향상**: 동시 요청 처리 능력 및 응답 속도 개선
+- 🔧 **리소스 관리**: Graceful shutdown 및 연결 풀 최적화
+- 📦 **의존성 추가**: `pymysql`, `aiomysql`, `greenlet`, `aiofiles`
 
 ### v2.1.0 (2025-08-25) - 정적 파일 및 UI 개선
 - ✨ **정적 파일 서빙**: CSS, JS, 이미지 파일을 위한 `/static` 엔드포인트 추가
