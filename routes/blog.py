@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Request, Depends, Form, status
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, status
 from db.database import direct_get_conn, context_get_conn
 from fastapi.exceptions import HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy import text, Connection
 from sqlalchemy.exc import SQLAlchemyError
 from schemas.blog_schema import Blog, BlogData
@@ -56,11 +56,15 @@ def create_blog(request: Request,
                 title: str = Form(min_length=2, max_length=200),
                 author: str = Form(max_length=100),
                 content: str = Form(min_length=2, max_length=4000),
+                imagefile: UploadFile | None = File(None),
                 conn: Connection = Depends(context_get_conn)):
-     
-     blog_svc.create_blog(title=title, author=author, content=content, conn=conn)
 
-     return RedirectResponse(url="/blogs", status_code=status.HTTP_303_SEE_OTHER)
+    image_loc = None
+    if len(imagefile.filename.strip()) > 0:
+        image_loc = blog_svc.upload_file(author=author, imagefile=imagefile)
+    blog_svc.create_blog(title=title, author=author, content=content, image_loc=image_loc, conn=conn)
+
+    return RedirectResponse(url="/blogs", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/modify/{id}")
@@ -80,16 +84,21 @@ def update_blog(request: Request, id:int,
                 title: str = Form(min_length=2, max_length=200),
                 author: str = Form(max_length=100),
                 content: str = Form(min_length=2, max_length=4000),
+                imagefile: UploadFile | None = File(None),
                 conn: Connection = Depends(context_get_conn)):
     
-    blog_svc.update_blog(id=id, title=title, author=author, content=content, conn=conn)
+    image_loc = None
+    if len(imagefile.filename.strip()) > 0:
+        image_loc = blog_svc.upload_file(author=author, imagefile=imagefile)
+    blog_svc.update_blog(id=id, title=title, author=author, content=content, image_loc=image_loc, conn=conn)
 
     return RedirectResponse(url=f"/blogs/show/{id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@router.post("/delete/{id}")
+@router.delete("/delete/{id}")
 def delete_blog(id: int, conn: Connection = Depends(context_get_conn)):
-    
-    blog_svc.delete_blog(id=id, conn=conn)
-    
-    return RedirectResponse(url="/blogs", status_code=status.HTTP_303_SEE_OTHER)
+
+    blog = blog_svc.get_blog_by_id(id, conn)
+
+    blog_svc.delete_blog(id=id, image_loc=blog.image_loc, conn=conn)
+    return JSONResponse(content={"message": f"Blog with id {id} has been deleted."}, status_code=status.HTTP_200_OK)
