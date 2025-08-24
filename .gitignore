@@ -90,10 +90,12 @@ ipython_config.py
 *.log
 
 # Static files (uploaded content)
-static/uploads/
+static/uploads/*
+!static/uploads/.gitkeep
 static/default/*
 !static/default/.gitkeep
 static/db_fundamental.png
+static/.DS_Store
 
 # Jupyter notebooks
 sync_async.ipynb
