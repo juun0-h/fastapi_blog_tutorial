@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/")
 async def get_all_blogs(request: Request, 
                         conn: Connection = Depends(context_get_conn)):
-        all_blogs = blog_svc.get_all_blogs(conn)
+        all_blogs = await blog_svc.get_all_blogs(conn)
 
         return templates.TemplateResponse(
             request=request,
@@ -28,10 +28,10 @@ async def get_all_blogs(request: Request,
         )
 
 @router.get("/show/{id}")
-def get_blog_by_id(request: Request, id: int,
+async def get_blog_by_id(request: Request, id: int,
                    conn: Connection = Depends(context_get_conn)):
 
-        blog = blog_svc.get_blog_by_id(id, conn)
+        blog = await blog_svc.get_blog_by_id(id, conn)
         blog.content = utils.newline_to_br(blog.content)
 
         return templates.TemplateResponse(
@@ -42,7 +42,7 @@ def get_blog_by_id(request: Request, id: int,
     
 
 @router.get("/new")
-def create_blog_ui(request: Request):
+async def create_blog_ui(request: Request):
 
     return templates.TemplateResponse(
         request=request,
@@ -52,7 +52,7 @@ def create_blog_ui(request: Request):
 
 
 @router.post("/new")
-def create_blog(request: Request,
+async def create_blog(request: Request,
                 title: str = Form(min_length=2, max_length=200),
                 author: str = Form(max_length=100),
                 content: str = Form(min_length=2, max_length=4000),
@@ -61,16 +61,16 @@ def create_blog(request: Request,
 
     image_loc = None
     if len(imagefile.filename.strip()) > 0:
-        image_loc = blog_svc.upload_file(author=author, imagefile=imagefile)
-    blog_svc.create_blog(title=title, author=author, content=content, image_loc=image_loc, conn=conn)
+        image_loc = await blog_svc.upload_file(author=author, imagefile=imagefile)
+    await blog_svc.create_blog(title=title, author=author, content=content, image_loc=image_loc, conn=conn)
 
     return RedirectResponse(url="/blogs", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/modify/{id}")
-def update_blog_ui(request: Request, id: int, conn: Connection = Depends(context_get_conn)):
+async def update_blog_ui(request: Request, id: int, conn: Connection = Depends(context_get_conn)):
 
-    blog = blog_svc.get_blog_by_id(id, conn)
+    blog = await blog_svc.get_blog_by_id(id, conn)
 
     return templates.TemplateResponse(
         request=request,
@@ -80,7 +80,7 @@ def update_blog_ui(request: Request, id: int, conn: Connection = Depends(context
 
 
 @router.post("/modify/{id}")
-def update_blog(request: Request, id:int,
+async def update_blog(request: Request, id:int,
                 title: str = Form(min_length=2, max_length=200),
                 author: str = Form(max_length=100),
                 content: str = Form(min_length=2, max_length=4000),
@@ -89,16 +89,16 @@ def update_blog(request: Request, id:int,
     
     image_loc = None
     if len(imagefile.filename.strip()) > 0:
-        image_loc = blog_svc.upload_file(author=author, imagefile=imagefile)
-    blog_svc.update_blog(id=id, title=title, author=author, content=content, image_loc=image_loc, conn=conn)
+        image_loc = await blog_svc.upload_file(author=author, imagefile=imagefile)
+    await blog_svc.update_blog(id=id, title=title, author=author, content=content, image_loc=image_loc, conn=conn)
 
     return RedirectResponse(url=f"/blogs/show/{id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.delete("/delete/{id}")
-def delete_blog(id: int, conn: Connection = Depends(context_get_conn)):
+async def delete_blog(id: int, conn: Connection = Depends(context_get_conn)):
 
-    blog = blog_svc.get_blog_by_id(id, conn)
+    blog = await blog_svc.get_blog_by_id(id, conn)
 
-    blog_svc.delete_blog(id=id, image_loc=blog.image_loc, conn=conn)
+    await blog_svc.delete_blog(id=id, image_loc=blog.image_loc, conn=conn)
     return JSONResponse(content={"message": f"Blog with id {id} has been deleted."}, status_code=status.HTTP_200_OK)
