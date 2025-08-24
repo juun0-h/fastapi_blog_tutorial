@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-blog-tutorial"
-version = "2.1.0"
+version = "2.2.0"
 description = "FastAPI Blog Management System with Service Layer Architecture"
 readme = "README.md"
 requires-python = ">=3.12"
